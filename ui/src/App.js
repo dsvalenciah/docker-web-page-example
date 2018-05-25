@@ -1,37 +1,59 @@
 import React, { Component } from 'react';
 
 import Record from './services/record';
+import io from "socket.io-client";
 
-const record = new Record();
+const recordService = new Record();
+const socket = io.connect(
+  "http://localhost", {'path': '/backend/socket.io'}
+);
+
 
 class App extends Component {
+  constructor(props) {
+    super(props)
+    socket.on('recordsChanged', (records)=> this.setState({ records }))
+  }
+
   state = {
     data: null,
-    something: '',
+    record: '',
+    records: [],
   }
 
-  componentDidMount() {
-    record.get(
-      response => this.setState({ data: response.body }),
-      error => this.setState({ data: 'Error' })
-    );
-  }
-
-  handleClick() {
-    const something = this.state.something;
-    if (something) {
-      record.post(
-        { something },
-        response => console.log(response),
+  handleButtonClick() {
+    const record = this.state.record;
+    if (record) {
+      recordService.post(
+        { record },
+        response => {
+          socket.emit('recordsChange');
+          this.setState({record: ''});
+        },
         error => console.log(error)
-      )
+      );
     } else {
       console.log('No data');
     }
   }
 
-  handleChange(something) {
-    this.setState({ something })
+  componentDidMount() {
+    recordService.get(
+      response => this.setState({ records: response.body.data }),
+      error => this.setState({ records: [] })
+    );
+  }
+
+  handleInputChange(record) {
+    this.setState({ record })
+  }
+
+  handleRecordClick(id) {
+    recordService.delete(
+      id,
+      response => socket.emit('recordsChange'),
+      error => console.log(error)
+    );
   }
 
   render() {
@@ -43,16 +65,26 @@ class App extends Component {
           </div>
           <div style={{ display: 'inline-block' }}>
             <input 
-              onChange={(e) => this.handleChange(e.target.value)}
+              onChange={(e) => this.handleInputChange(e.target.value)}
               type="text"
+              onKeyPress={(e) => e.key === 'Enter' && this.handleButtonClick()}
+              value={this.state.record}
             />
           </div>
           <button
-            onClick={() => this.handleClick()}>
+            onClick={() => this.handleButtonClick()}>
             Click
           </button>
         </center>
-        <pre>{JSON.stringify(this.state.data, undefined, 4)}</pre>
+        <ul>
+          {this.state.records.map(r => (
+            <li
+              key={r._id}
+              onClick={() => this.handleRecordClick(r._id)}>
+              {r.record}
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
