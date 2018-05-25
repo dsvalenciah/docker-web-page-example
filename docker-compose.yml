@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  db:
+    image: mongo:latest
+    volumes:
+      - database-storage:/run/db
+    ports:
+      - 27017:27017
+
+  backend:
+    image: backend
+    build: ./backend
+    command: python app.py
+    ports:
+      - 80
+    environment:
+      VIRTUAL_HOST: "*/backend, */backend/*"
+      VIRTUAL_HOST_WEIGHT: 10
+      DB_HOST: db
+    links:
+      - db
+    depends_on:
+      - db
+
+  ui:
+    image: ui
+    build: ./ui
+    ports:
+      - 80
+    environment:
+      VIRTUAL_HOST: "*/*"
+      VIRTUAL_HOST_WEIGHT: 0
+
+  lb:
+    image: dockercloud/haproxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - '80:80'
+      - '1936:1936'
+    links:
+      - db
+      - backend
+      - ui
+
+volumes:
+    database-storage:
