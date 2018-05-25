@@ -10,7 +10,19 @@ class Record {
 
   get(response, error) {
     request
-      .get(this.url)
+      .get(this.url + '/collection')
+      .end((err, res) => {
+        if (!err) {
+          response(res);
+        } else {
+          error(err);
+        }
+      });
+  }
+
+  delete(id, response, error) {
+    request
+      .delete(`${this.url}/_/${id}`)
       .end((err, res) => {
         if (!err) {
           response(res);
@@ -22,7 +34,7 @@ class Record {
 
   post(data, response, error) {
     request
-      .post(this.url)
+      .post(this.url + '/collection')
       .send(data)
       .end((err, res) => {
         if (!err) {
