@@ -5,7 +5,7 @@ class Record {
   constructor() {
     // Dev mode prefix = 'http://localhost'
     // Build mode prefix = ''
-    this.url = 'http://localhost/backend';
+    this.url = `${process.env.NODE_ENV === 'production' ? '' : 'http://localhost'}/backend`;
   }
 
   get(response, error) {

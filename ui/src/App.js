@@ -4,10 +4,14 @@ import Record from './services/record';
 import io from "socket.io-client";
 
 const recordService = new Record();
-const socket = io.connect(
-  "http://localhost", {'path': '/backend/socket.io'}
+const socket = io(
+  `${process.env.NODE_ENV === 'production' ? '' : 'http://localhost'}`,
+  {path: '/backend/socket.io'}
 );
 
+socket.on('connect', () =>{
+  console.log('Socket id ' + socket.id);
+});
 
 class App extends Component {
   constructor(props) {
