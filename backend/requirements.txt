@@ -1,3 +1,5 @@
+faker
+requests
 sanic
 pymongo
 Sanic-Cors

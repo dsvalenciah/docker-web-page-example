@@ -1,94 +1,80 @@
 import React, { Component } from 'react';
 
-import Record from './services/record';
-import io from "socket.io-client";
+import ConversationsService from './services/conversation';
 
-const recordService = new Record();
-const socket = io(
-  `${process.env.NODE_ENV === 'production' ? '' : 'http://localhost'}`,
-  {path: '/backend/socket.io'}
-);
+import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
+import '../node_modules/react-bootstrap-table/dist/react-bootstrap-table-all.min.css';
 
-socket.on('connect', () =>{
-  console.log('Socket id ' + socket.id);
-});
+const conversationsService = new ConversationsService();
 
 class App extends Component {
   constructor(props) {
     super(props)
-    socket.on('recordsChanged', (records)=> this.setState({ records }))
   }
 
-  state = {
-    data: null,
-    record: '',
-    records: [],
-  }
+  state = {}
 
-  handleButtonClick() {
-    const record = this.state.record;
-    if (record) {
-      recordService.post(
-        { record },
-        response => {
-          socket.emit('recordsChange');
-          this.setState({record: ''});
-        },
-        error => console.log(error)
-      );
-    } else {
-      console.log('No data');
-    }
+  handlerClickCleanFiltered() {
+    this.refs.name1.cleanFiltered();
+    this.refs.name2.cleanFiltered();
+    this.refs.quality.cleanFiltered();
+    this.refs.price.cleanFiltered();
+    this.refs.satisfaction.cleanFiltered();
+    this.refs.inStockDate.cleanFiltered();
   }
 
   componentDidMount() {
-    recordService.get(
-      response => this.setState({ records: response.body.data }),
-      error => this.setState({ records: [] })
-    );
-  }
-
-  handleInputChange(record) {
-    this.setState({ record })
-  }
-
-  handleRecordClick(id) {
-    recordService.delete(
-      id,
-      response => socket.emit('recordsChange'),
-      error => console.log(error)
-    );
+    conversationsService.get(
+      (res) => this.setState({ conversations: res.body.data}),
+      (err) => console.log(err)
+    )
   }
 
   render() {
     return (
       <div className="App">
-        <center>
-          <div style={{ display: 'inline-block' }}>
-            <p>Something: </p>
-          </div>
-          <div style={{ display: 'inline-block' }}>
-            <input 
-              onChange={(e) => this.handleInputChange(e.target.value)}
-              type="text"
-              onKeyPress={(e) => e.key === 'Enter' && this.handleButtonClick()}
-              value={this.state.record}
-            />
-          </div>
-          <button
-            onClick={() => this.handleButtonClick()}>
-            Click
-          </button>
-        </center>
-        <ul>
-          {this.state.records.map(r => (
-            <li
-              key={r._id}
-              onClick={() => this.handleRecordClick(r._id)}>
-              {r.record}
-            </li>
-          ))}
-        </ul>
+      <BootstrapTable ref='table' data={ this.state.conversations }>
+        <TableHeaderColumn isKey dataField='id'>
+          Product ID
+          <br/>
+            <a
+              onClick={ this.handlerClickCleanFiltered.bind(this) }
+              style={ { cursor: 'pointer' } }
+            >
+            clear filters
+          </a>
+        </TableHeaderColumn>
+        <TableHeaderColumn
+          dataField='name'
+          filter={ { type: 'TextFilter', placeholder: 'Please enter a value' } }
+        >
+          Name
+        </TableHeaderColumn>
+        <TableHeaderColumn
+          dataField='channels'
+          filter={ { type: 'RegexFilter', placeholder: 'Please enter a regex' } }
+        >
+          Channels
+        </TableHeaderColumn>
+        <TableHeaderColumn
+          dataField='status'
+          filter={ { type: 'RegexFilter', placeholder: 'Please enter a regex' } }
+        >
+          Status
+        </TableHeaderColumn>
+        <TableHeaderColumn
+          dataField='messageCount'
+          filter={ { type: 'RegexFilter', placeholder: 'Please enter a regex' } }
+        >
+          MessageCount
+        </TableHeaderColumn>
+        <TableHeaderColumn
+          dataField='preview'
+          filter={ { type: 'RegexFilter', placeholder: 'Please enter a regex' } }
+        >
+          Preview
+        </TableHeaderColumn>
+      </BootstrapTable>
       </div>
     );
   }
